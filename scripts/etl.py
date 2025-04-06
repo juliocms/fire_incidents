@@ -157,7 +157,6 @@ class FireIncidentsETL:
         try:
             cursor = self.conn.cursor()
             
-            # Verifica se a restrição já existe
             cursor.execute("""
                 SELECT constraint_name 
                 FROM information_schema.table_constraints 
@@ -166,7 +165,6 @@ class FireIncidentsETL:
             """)
             
             if not cursor.fetchone():
-                # Cria a restrição se não existir
                 cursor.execute("""
                     ALTER TABLE fire_incidents 
                     ADD CONSTRAINT fire_incidents_pkey 
@@ -188,10 +186,8 @@ class FireIncidentsETL:
         try:
             cursor = self.conn.cursor()
             
-            # Verifica e cria as restrições necessárias
             self._ensure_constraints()
             
-            # Obtém as colunas da tabela
             cursor.execute("""
                 SELECT column_name 
                 FROM information_schema.columns 
@@ -200,28 +196,22 @@ class FireIncidentsETL:
             table_columns = [row[0] for row in cursor.fetchall()]
             logger.info(f"Colunas disponíveis na tabela: {table_columns}")
             
-            # Mostra as colunas do DataFrame antes do filtro
             logger.info(f"Colunas no DataFrame antes do filtro: {list(df.columns)}")
             
-            # Filtra apenas as colunas que existem na tabela
             valid_columns = [col for col in df.columns if col in table_columns]
             if not valid_columns:
                 raise ValueError("Nenhuma coluna válida encontrada para inserção")
             
-            # Cria um novo DataFrame apenas com as colunas válidas
             df_valid = df[valid_columns].copy()
             
-            # Trata valores NaT e None para campos de data/hora
             for col in ['incident_date', 'incident_time']:
                 if col in df_valid.columns:
                     df_valid[col] = df_valid[col].replace({pd.NaT: None})
             
-            # Mostra informações sobre o DataFrame
             logger.info(f"Total de registros no DataFrame: {len(df_valid)}")
             logger.info(f"Primeiras linhas do DataFrame:\n{df_valid.head()}")
             logger.info(f"Colunas que serão inseridas: {valid_columns}")
             
-            # Prepara a query de upsert
             columns = ', '.join(valid_columns)
             values = ', '.join(['%s'] * len(valid_columns))
             update_columns = ', '.join([f"{col} = EXCLUDED.{col}" for col in valid_columns if col != 'incident_number'])
@@ -235,7 +225,6 @@ class FireIncidentsETL:
             
             logger.info(f"Query de upsert: {query}")
             
-            # Executa o upsert
             cursor.executemany(query, df_valid.values.tolist())
             self.conn.commit()
             

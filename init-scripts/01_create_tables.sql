@@ -1,4 +1,3 @@
--- Tabela de incidentes de incêndio
 CREATE TABLE IF NOT EXISTS fire_incidents (
     incident_number VARCHAR(50) PRIMARY KEY,
     incident_date TIMESTAMP,
@@ -14,7 +13,6 @@ CREATE TABLE IF NOT EXISTS fire_incidents (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Função para atualizar o timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -23,7 +21,6 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Trigger para atualizar o timestamp
 CREATE TRIGGER update_fire_incidents_updated_at
     BEFORE UPDATE ON fire_incidents
     FOR EACH ROW
